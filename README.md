@@ -127,7 +127,34 @@ You can can attach listeners by using one of the methods below:
 1. Polymer Event listener
 2. on- annotated event listener
 3. addEventListener vanila Javascript method
+
+In addition, an iron-signal event is fired whenever the nav bar is expanded or collapsed.
+This allows any components anywhere in the containment hierarchy to listen for this event
+and in order to reflow its layout accordingly.  This is needed because there is no reliable events for
+div resize without a window resize event.
+
+iron-signal event data:
+{ isNavExpanded: true|false, eventDetails: 'start'|'end' }
+
+Example:
+
+```
+	<iron-signals on-iron-signal-appnav="onAppNavSignal"></iron-signals>
+```
 <br />
+	...
+<br />
+
+```
+onAppNavSignal: function(event, details) {
+    if (details.isNavExpanded && details.eventDetails == 'start') {
+        // do something
+    }
+    else if (details.isNavExpanded && details.eventDetails == 'end') {
+        // do something else
+    }
+}
+```
 <hr />
 
 ## Methods

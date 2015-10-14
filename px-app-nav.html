@@ -5,6 +5,7 @@
     See https://github.com/jreichenberg/grunt-dep-serve#why-do-we-need-this
 -->
 <link rel="import" href="../polymer/polymer.html"/>
+<link rel="import" href="../iron-signals/iron-signals.html"/>
 <script src="../web-animations-js/web-animations-next.min.js"></script>
 
 <!--
@@ -427,7 +428,11 @@ Nav bar / drawer for applications
      */
     navExpanderButton: function(evt){
       this.navExpanded = !this.navExpanded;
+
+      // signal name must be all lower case - didn't work otherwise.
+      this.fire('iron-signal', { name: 'appnav', data: {isNavExpanded: this.navExpanded, eventDetails: 'start'}  });
       this.ani = document.timeline.play(this._buttonAnimation(this, Polymer.dom(this.root).querySelectorAll("span")));
+      this.fire('iron-signal', { name: 'appnav', data: {isNavExpanded: this.navExpanded, eventDetails: 'end'}  });
     }
   });
 </script>
