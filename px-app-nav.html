@@ -32,19 +32,39 @@ Nav bar / drawer for applications
 
   <template>
     <nav role="navigation">
-      <button class="btn btn--bare btn--svg" on-click="toggleNav"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="16" viewBox="291 489.4 20 16"><path fill="#ffffff" d="M291 489.4v4h20v-4h-20zm0 10h20v-4h-20v4zm0 6h20v-4h-20v4z"/></svg></button>
+      <button class="btn btn--bare btn--svg" on-click="toggleNav">
+        <svg xmlns="http://www.w3.org/2000/svg"
+             width="20"
+             height="16"
+             viewBox="291 489.4 20 16">
+             <path fill="#ffffff"
+                   d="M291 489.4v4h20v-4h-20zm0 10h20v-4h-20v4zm0 6h20v-4h-20v4z"/>
+        </svg>
+      </button>
       <ul id="navitemlist" class="navbar__item list-bare">
-        <template is="dom-repeat" items="{{navItems}}" as="navitem">
+        <template is="dom-repeat" items="{{_navItems}}" as="navItem">
           <li>
-            <a class$="{{navitem.class}}" href$="{{navitem.href}}" event-name$="{{navitem.eventName}}" on-click="navClickHandler"><i class$="{{navitem.icon}}"></i><span class=u-ml-->{{navitem.label}}</span></a>
+            <a class="{{navItem.class}}"
+               href="{{navItem.href}}"
+               event-name="{{navItem.eventName}}"
+               on-click="navClickHandler">
+              <i class="{{navItem.icon}}"></i>
+              <span class="u-ml--">{{navItem.label}}</span>
+            </a>
+            <!--
             <ul class$="{{navitem.subitemlistclass}}">
               <template is="dom-repeat" items="{{navitem.subitems}}">
                 <li>
-                  <a href$="{{item.href}}" class$="{{item.class}}" event-name$="{{item.eventName}}" on-click="subnavClickHandler"><span class$="{{navitem.subitemclass}}">{{item.label}}</span></a>
+                  <a href$="{{item.href}}"
+                     class$="{{item.class}}"
+                     event-name$="{{item.eventName}}"
+                     on-click="subnavClickHandler">
+                     <span class$="{{navitem.subitemclass}}">{{item.label}}</span>
+                  </a>
                 </li>
               </template>
             </ul>
-
+            -->
           </li>
         </template>
       </ul>
@@ -148,9 +168,10 @@ Nav bar / drawer for applications
       if (!newValue){
         this.navItems = [];
       }
-      else{
+      else {
         this.navItems.forEach(this._computeHref, this);
-        this.navItems.forEach(this._computeIcon);
+        this.navItems.forEach(this._checkItemClass, this);
+        this.navItems.forEach(this._computeIcon, this);
         this.markSelected(window.location.href);
         this._setSubNavVisibility();
         this._potentiallyAdjustAccordion();
@@ -177,15 +198,25 @@ Nav bar / drawer for applications
        }, this);
     },
 
+    _navItems: [],
+
+    // reconcile internal representation of navItems for use in the template
+
+    _reconcileNavItems: function(items) {
+      items.forEach(this._computeHref, this);
+      items.forEach(this._checkItemClass, this);
+      items.forEach(this._computeIcon, this);
+      return items;
+    },
+
     /**
      * Parse navItemsStrings and navItemsPaths to create unified navItems
      */
     ready: function() {
-      //check to see if navitems have been initialised.
 
-      if (this.navItems && (this.navItems.length > 0 && !this.navItems[0].href)){
-        this.navItems.forEach(this._computeHref, this);
-        this.navItems.forEach(this._computeIcon);
+      //check to see if navitems have been initialised.
+      if (this.navItems && (this.navItems.length > 0)){
+        this._navItems = this._reconcileNavItems(this.navItems);
         this._setSubNavVisibility();
         this._potentiallyAdjustAccordion();
       };
@@ -228,7 +259,7 @@ Nav bar / drawer for applications
       var el = evt.currentTarget;
       if (el.getAttribute("event-name")) {
         this.fire(el.getAttribute("event-name"));
-      }
+      };
       var href = el.getAttribute("href");
       this.markSelected(href);
       var subnavEle = Polymer.dom(evt.currentTarget.parentElement).querySelector('ul');
@@ -307,7 +338,6 @@ Nav bar / drawer for applications
     markSelected: function(path) {
       var resolvedPath = this._parseOutPathPrefix(path);
       var topLevelNavElems = Polymer.dom(this.root).querySelectorAll("#navitemlist>li");
-
       if (this.navItems){
         for (var i = 0; i < this.navItems.length; i++) {
           var item = this.navItems[i];
@@ -362,16 +392,30 @@ Nav bar / drawer for applications
     },
 
     _computeHref: function(item) {
-      item.href = item[this.pathKey] ? this.pathPrefix + item[this.pathKey] : null;
+      item.href = this._getHref(item);
+      if (item.subitems) {
+        this._addHrefToItems(item.subitems)
+      }
+    },
+
+    _checkItemClass: function(item) {
       if (!item.class){
         item.subitemlistclass = item.subitemclass = item.class = "";
+      }
+    },
 
-      }
-      if (item.subitems) {
-        item.subitems.forEach(function(subitem) {
-          this._computeHref(subitem);
-        }, this);
-      }
+    _addHrefToItems(items) {
+      items.forEach(function(item) {
+        item.href = this._getHref(item);
+      }, this);
+    },
+
+    /*
+    * item.href is computed as pathPrefix (such as "#!/") prepended to actual
+    * path value (looked up by externally defined pathKey, default: 'path')
+    */
+    _getHref: function(item) {
+      return item[this.pathKey] ? this.pathPrefix + item[this.pathKey] : null;
     },
 
     _computeIcon: function(item) {
