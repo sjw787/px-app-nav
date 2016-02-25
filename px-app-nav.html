@@ -37,8 +37,8 @@ Nav bar / drawer for applications
              width="20"
              height="16"
              viewBox="291 489.4 20 16">
-             <path fill="#ffffff"
-                   d="M291 489.4v4h20v-4h-20zm0 10h20v-4h-20v4zm0 6h20v-4h-20v4z"/>
+          <path fill="#ffffff"
+                d="M291 489.4v4h20v-4h-20zm0 10h20v-4h-20v4zm0 6h20v-4h-20v4z"/>
         </svg>
       </button>
       <ul id="navitemlist" class="navbar__item list-bare">
@@ -51,7 +51,6 @@ Nav bar / drawer for applications
               <i class="{{navItem.icon}}"></i>
               <span class="u-ml--">{{navItem.label}}</span>
             </a>
-            <!--
             <ul class$="{{navitem.subitemlistclass}}">
               <template is="dom-repeat" items="{{navitem.subitems}}">
                 <li>
@@ -64,7 +63,6 @@ Nav bar / drawer for applications
                 </li>
               </template>
             </ul>
-            -->
           </li>
         </template>
       </ul>
@@ -94,6 +92,14 @@ Nav bar / drawer for applications
           return [{}];
         },
         observer: '_observeChanged'
+      },
+
+      _navItems: {
+        type: Array,
+        notify: false,
+        value: function() {
+          return [{}]
+        }
       },
 
       /**
@@ -158,62 +164,10 @@ Nav bar / drawer for applications
       }
     },
 
-    // listeners: {
-    //   "nav-items-changed": "_observeChanged"
-    //  },
-
-    _protocolRE: new RegExp('(http|https)://'),
-
-    _observeChanged: function(newValue) {
-      if (!newValue){
-        this.navItems = [];
-      }
-      else {
-        this.navItems.forEach(this._computeHref, this);
-        this.navItems.forEach(this._checkItemClass, this);
-        this.navItems.forEach(this._computeIcon, this);
-        this.markSelected(window.location.href);
-        this._setSubNavVisibility();
-        this._potentiallyAdjustAccordion();
-      }
-    },
-
-    _potentiallyAdjustAccordion: function() {
-       this.navItems.forEach(function(item){
-         var navSubitems = item.subitems;
-         if (navSubitems && navSubitems.length >= 1 && item.subSelected) { // if subselected && has subitems
-
-            var parentA = Polymer.dom(this.$.navitemlist).querySelector('a.subselected'),
-                parent = parentA.parentElement.querySelector('ul'),
-                heightAfter = (navSubitems.length) * (parentA.clientHeight * 0.6666) + 'px',
-                listResizeAnimation = new SequenceEffect([
-                 new KeyframeEffect(parent, [{height: parent.clientHeight}, {height: heightAfter}], {
-                     duration: 200,
-                     fill: 'forwards'
-                 })
-             ]);
-
-             document.timeline.play(listResizeAnimation);
-         }
-       }, this);
-    },
-
-    _navItems: [],
-
-    // reconcile internal representation of navItems for use in the template
-
-    _reconcileNavItems: function(items) {
-      items.forEach(this._computeHref, this);
-      items.forEach(this._checkItemClass, this);
-      items.forEach(this._computeIcon, this);
-      return items;
-    },
-
     /**
      * Parse navItemsStrings and navItemsPaths to create unified navItems
-     */
+    */
     ready: function() {
-
       //check to see if navitems have been initialised.
       if (this.navItems && (this.navItems.length > 0)){
         this._navItems = this._reconcileNavItems(this.navItems);
@@ -247,6 +201,54 @@ Nav bar / drawer for applications
 
     },
 
+    // listeners: {
+    //   "nav-items-changed": "_observeChanged"
+    //  },
+
+    _protocolRE: new RegExp('(http|https)://'),
+
+    _observeChanged: function(newValue) {
+      if (!newValue){
+        this._navItems = [{}];
+      }
+      else {
+        this._navItems = this._reconcileNavItems(newValue);
+        this.markSelected(window.location.href);
+        this._setSubNavVisibility();
+        this._potentiallyAdjustAccordion();
+      }
+    },
+
+    _potentiallyAdjustAccordion: function() {
+       this.navItems.forEach(function(item){
+         var navSubitems = item.subitems;
+         if (navSubitems && navSubitems.length >= 1 && item.subSelected) { // if subselected && has subitems
+
+            var parentA = Polymer.dom(this.$.navitemlist).querySelector('a.subselected'),
+                parent = parentA.parentElement.querySelector('ul'),
+                heightAfter = (navSubitems.length) * (parentA.clientHeight * 0.6666) + 'px',
+                listResizeAnimation = new SequenceEffect([
+                 new KeyframeEffect(parent, [{height: parent.clientHeight}, {height: heightAfter}], {
+                     duration: 200,
+                     fill: 'forwards'
+                 })
+             ]);
+
+             document.timeline.play(listResizeAnimation);
+         }
+       }, this);
+    },
+
+    // reconcile internal representation of navItems for use in the template
+    _reconcileNavItems: function(items) {
+      items.forEach(this._addHrefToItem, this);
+      items.forEach(this._checkItemClass, this);
+      items.forEach(this._computeIcon, this);
+      return items;
+    },
+
+
+
     /**
      * When a nav item is selected, calls markSelected(). The actual navigation is accomplished without JavaScript using
      * an HTML anchor tag unless the passed click event is cancelled / stopPropagation().
@@ -255,16 +257,25 @@ Nav bar / drawer for applications
      * @param {Event} evt The click event.
      * @private
      */
-    navClickHandler: function(evt) {
-      var el = evt.currentTarget;
-      if (el.getAttribute("event-name")) {
-        this.fire(el.getAttribute("event-name"));
-      };
+    navClickHandler: function(e) {
+      var el = e.currentTarget;
       var href = el.getAttribute("href");
+      var listItemEl = Polymer.dom(el.parentElement);
+      var subnavEl = listItemEl.querySelector('ul');
       this.markSelected(href);
-      var subnavEle = Polymer.dom(evt.currentTarget.parentElement).querySelector('ul');
-      this._animateMenuItem(subnavEle);
+      this._customEventIsSet(el) ? this._fireCustomEvent(el) : null;
+      this._animateMenuItem(subnavEl);
     },
+
+    _customEventIsSet: function(el) {
+      var attr = el.getAttribute("event-name");
+      return (typeof attr === 'string' && attr.length > 0);
+    },
+
+    _fireCustomEvent: function(el) {
+      this.fire(el.getAttribute("event-name"));
+    },
+
 
     _animateMenuItem: function(subnavEle){
       var hidden = subnavEle.classList.contains('visuallyhidden'),
@@ -391,31 +402,21 @@ Nav bar / drawer for applications
       return resolvedPath.substring(idx + 1, argsIdx);
     },
 
-    _computeHref: function(item) {
-      item.href = this._getHref(item);
-      if (item.subitems) {
-        this._addHrefToItems(item.subitems)
-      }
-    },
-
     _checkItemClass: function(item) {
       if (!item.class){
         item.subitemlistclass = item.subitemclass = item.class = "";
       }
     },
 
-    _addHrefToItems(items) {
-      items.forEach(function(item) {
-        item.href = this._getHref(item);
-      }, this);
-    },
-
     /*
     * item.href is computed as pathPrefix (such as "#!/") prepended to actual
     * path value (looked up by externally defined pathKey, default: 'path')
     */
-    _getHref: function(item) {
-      return item[this.pathKey] ? this.pathPrefix + item[this.pathKey] : null;
+    _addHrefToItem(item) {
+      item.href = this.pathPrefix + '/' + item[this.pathKey];
+      if (item.subitems) {
+        item.subitems.forEach(this._addHrefToItem, item.subitems);
+      }
     },
 
     _computeIcon: function(item) {
