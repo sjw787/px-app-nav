@@ -42,23 +42,23 @@ Nav bar / drawer for applications
         </svg>
       </button>
       <ul id="navitemlist" class="navbar__item list-bare">
-        <template is="dom-repeat" items="{{_navItems}}" as="item">
+        <template is="dom-repeat" items="{{_navItems}}" as="navItem">
           <li>
-            <a class="{{item.class}}"
-               href="{{item.href}}"
-               event-name="{{item.eventName}}"
+            <a class="{{navItem.class}}"
+               href="{{navItem.href}}"
+               event-name="{{navItem.eventName}}"
                on-click="navClickHandler">
-              <i class$="{{item.icon}}"></i>
-              <span class="u-ml--">{{item.label}}</span>
+              <i class$="{{navItem.icon}}"></i>
+              <span class="u-ml--">{{navItem.label}}</span>
             </a>
-            <ul class$="{{item.subitemlistclass}}">
-              <template is="dom-repeat" items="{{item.subitems}}" as="subitem">
+            <ul class$="{{navitem.subitemlistclass}}">
+              <template is="dom-repeat" items="{{navitem.subitems}}">
                 <li>
-                  <a href$="{{subitem.href}}"
-                     class$="{{subitem.class}}"
-                     event-name$="{{subitem.eventName}}"
+                  <a href$="{{item.href}}"
+                     class$="{{item.class}}"
+                     event-name$="{{item.eventName}}"
                      on-click="subnavClickHandler">
-                     <span class$="{{item.subitemclass}}">{{subitem.label}}</span>
+                     <span class$="{{navitem.subitemclass}}">{{item.label}}</span>
                   </a>
                 </li>
               </template>
@@ -74,7 +74,6 @@ Nav bar / drawer for applications
 <script>
 
   Polymer({
-
     is: 'px-app-nav',
 
     properties: {
@@ -93,6 +92,14 @@ Nav bar / drawer for applications
           return [{}];
         },
         observer: '_observeChanged'
+      },
+
+      _navItems: {
+        type: Array,
+        notify: false,
+        value: function() {
+          return [{}]
+        }
       },
 
       /**
@@ -156,8 +163,6 @@ Nav bar / drawer for applications
         value:function(){ return {};}
       }
     },
-
-    _navItems: [{}],
 
     /**
      * Parse navItemsStrings and navItemsPaths to create unified navItems

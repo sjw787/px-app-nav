@@ -14,8 +14,8 @@
     "test"
   ],
   "dependencies": {
-    "polymer": "~v1.2.3",
-    "px-theme": "https://github.com/PredixDev/px-theme.git#~0.6.1",
+    "polymer": "~v1.3.1",
+    "px-theme": "https://github.com/PredixDev/px-theme.git#~0.6.4",
     "web-animations-js": "~2.0.0"
   },
   "devDependencies": {
