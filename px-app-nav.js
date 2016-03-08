@@ -1,4 +1,3 @@
-
 Polymer({
 
   is: 'px-app-nav',
@@ -27,11 +26,12 @@ Polymer({
      * hash part of the URL.  To make them relative to current directory, use '/'.
      *
      * @type {String}
-     * @default ["#"]
+     * @default ["#!"]
      */
     pathPrefix: {
-      value : '#',
-      type: String
+      value : '#!',
+      type: String,
+      observer: '_setParsePathRegex'
     },
 
     /**
@@ -91,13 +91,14 @@ Polymer({
   _navItems: [{}],
 
   /**
-   * RegEx to force https
+   * Internal representation of navigation items
   */
-  _protocolRegEx: new RegExp('(http|https)://'),
+  parsePathRegex: null,
 
   // Set media query and if navItems are available, reset (init)
   ready: function() {
     this._setMediaQuery();
+    this._setParsePathRegex(this.pathPrefix);
     if (this.navItems && this.navItems.length > 0) {
       this._resetNav();
     }
@@ -255,8 +256,9 @@ Polymer({
   },
 
   /**
-   * When a nav item is selected, calls _markSelected(). The actual navigation is accomplished without JavaScript using
-   * an HTML anchor tag unless the passed click event is cancelled / stopPropagation().
+   * When a nav item is selected, calls _markSelected().
+   * The actual navigation is accomplished without JavaScript using an HTML
+   * anchor tag unless the passed click event is cancelled / stopPropagation().
    *
    * @see #_markSelected
    * @param {Event} evt The click event.
@@ -282,16 +284,18 @@ Polymer({
    * @param {String} path The selected path
    */
   _markSelected: function(path) {
-    var resolvedPath = this._parseOutPathPrefix(path);
+    var resolvedPath = this._parsePath(path);
     var topLevelNavElems = Polymer.dom(this.root).querySelectorAll("#navitemlist>li");
-    if (this.navItems){
+    if (this.navItems) {
       for (var i = 0; i < this.navItems.length; i++) {
         var item = this.navItems[i];
         item.selected = item[this.pathKey] === resolvedPath;
         item.subSelected = false;
         item.class = item.selected ? "selected" : "";
         if (item.subitems) {
-          item.subitems.forEach(this._asdf, this);
+          item.subitems.forEach(function(subitem, idx) {
+            this._asdf(subitem, idx, resolvedPath, topLevelNavElems, item, i);
+          }, this);
         }
         this.toggleClass("selected", item.selected, Polymer.dom(topLevelNavElems[i]).querySelector('a'));
         this.toggleClass("subselected", item.subSelected, Polymer.dom(topLevelNavElems[i]).querySelector('a'));
@@ -299,7 +303,7 @@ Polymer({
     }
   },
 
-  _asdf: function(subitem, idx) {
+  _asdf: function(subitem, idx, resolvedPath, topLevelNavElems, item, i) {
     subitem.selected = subitem[this.pathKey] === resolvedPath;
     subitem.class = subitem.selected ? "selected" : "";
     if(topLevelNavElems.length > 0){
@@ -324,19 +328,35 @@ Polymer({
     }, this);
   },
 
-  _parseOutPathPrefix: function(fullPath) {
-    if (!fullPath) {
-        return null;
-    };
-    var resolvedPath = fullPath.replace(this._protocolRegEx, '');
-    var idx = resolvedPath.indexOf(this.pathPrefix);
-    var argsIdx = resolvedPath.indexOf('?');
-
-    if (argsIdx === -1){
-      argsIdx = resolvedPath.length;
+  _setParsePathRegex: function(newValue) {
+    if(newValue) {
+      this.pathPrefix = newValue;
     }
+    // escape the pathPrefix before inserting it into the parsePathRegex
+    var escapedPathPrefix = _.escapeRegExp(this.pathPrefix);
+    // assign new value to parsePathRegex
+    this.parsePathRegex = new RegExp('/(?:https?:\/\/)?(?:www\.)?' +
+      '(?:[-a-zA-Z0-9@:%._\+~#=]{2,256})' +
+      '(?:\.[a-z]{2,6}\b)?(?:\:[0-9]{2,6})?\/' +
+      escapedPathPrefix +
+      '([-a-zA-Z0-9@:%._\+~#=\/\d\w]*)/');
+  },
 
-    return resolvedPath.substring(idx + 1, argsIdx);
+  // send any path and get back a parsed path
+  // example: "http://localhost:3000/#!/path" => "/path"
+  _parsePath: function(path) {
+    // return null if there is no path given
+    if(path && this.parsePathRegex) {
+      // the regex should extract characters past the path prefix as match[1]
+      var match = this.parsePathRegex.exec(path);
+      if(match) {
+        match[1];
+      } else {
+        return "/";
+      }
+    } else {
+      return null;
+    }
   },
 
   _checkItemClass: function(item) {
@@ -354,7 +374,7 @@ Polymer({
     item.href = this.pathPrefix + '/' + item[this.pathKey];
     if (item.subitems) {
       item.subitems.forEach(this._addHrefToItem, item.subitems);
-    };
+    }
     return item;
   },
 
@@ -407,13 +427,13 @@ Polymer({
         return;
       } else {
         el.classList.toggle(className);
-      };
-    }, { duration: 0, fill: 'forwards' })
+      }
+    }, { duration: 0, fill: 'forwards' });
   },
 
   _keyframeToggleClassAll: function(els, className) {
     // Return grouped keyframe effects toggling class on all els, 0ms
-    _this = this;
+    var _this = this;
     return new GroupEffect(els.map(function(el) {
       return _this._keyframeToggleClass(el, className);
     }));
@@ -550,7 +570,7 @@ Polymer({
     } else {
       this.fire('nav-collapsing');
       this._contractNav();
-    };
+    }
   },
 
   _handleNavItems: function(newValue) {
@@ -559,6 +579,6 @@ Polymer({
     } else {
       this._resetNav();
     }
-  },
+  }
 
 });
