@@ -346,9 +346,13 @@ Nav bar / drawer for applications
      *
      * @param {String} path The selected path
      */
+    _root: Polymer.dom(this.root),
+
     markSelected: function(path) {
       var resolvedPath = this._parseOutPathPrefix(path);
       var topLevelNavElems = Polymer.dom(this.root).querySelectorAll("#navitemlist>li");
+      console.log(topLevelNavElems);
+      console.log(Polymer.dom(this.root), this._root);
       if (this.navItems){
         for (var i = 0; i < this.navItems.length; i++) {
           var item = this.navItems[i];

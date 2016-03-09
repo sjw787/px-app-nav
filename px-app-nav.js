@@ -3,7 +3,6 @@ Polymer({
   is: 'px-app-nav',
 
   properties: {
-
     /**
      * Object array of items and sub-items in the nav.
      * Each object in the Array can specify '[path-key]', 'label', 'icon'
@@ -89,8 +88,6 @@ Polymer({
    * Internal representation of navigation items
   */
   _navItems: [{}],
-
-  _root: Polymer.dom(this.root),
 
   /**
    * Internal representation of navigation items
@@ -214,7 +211,6 @@ Polymer({
     this.fire(el.getAttribute("event-name"));
   },
 
-
   _animateMenuItem: function(subnavEle){
     var hidden = subnavEle.classList.contains('visuallyhidden'),
         allSubNavSpans = Polymer.dom(subnavEle).querySelectorAll("span"),
@@ -290,9 +286,17 @@ Polymer({
       // capture the correct path
       var resolvedPath = this._parsePath(path);
       // all top-level <li> elements
-      var lis = this._root.querySelectorAll("#navitemlist>li");
+      var lis = Polymer.dom(this.root).querySelectorAll("#navitemlist>li");
       // loop over navItems and set selected
-      var i;
+      var i, len = this._navItems.length;
+      /*
+      for (i=0; i<len; i++ ) {
+        var item = this._navItems[i];
+        var itemLink = Polymer.dom(lis[i]).querySelector('a');
+        item.selected = (item[this.pathKey] === resolvedPath);
+      }
+      */
+
       for (i = 0; i < this._navItems.length; i++) {
         var item = this._navItems[i];
         var itemLink = Polymer.dom(lis[i]).querySelector('a');
@@ -312,7 +316,6 @@ Polymer({
           var li;
           for(j = 0; j < item.subitems.length; j++) {
             subitem = item.subitems[j];
-            this._asdf(subitem, j, resolvedPath, lis, item, i);
             subitem.selected = subitem[this.pathKey] === resolvedPath;
             subitem.class = subitem.selected ? "selected" : "";
             if(lis.length > 0) {
@@ -325,9 +328,8 @@ Polymer({
               }
             }
             item.subSelected = subitem.selected ? true : item.subSelected;
-          };
+          }
         }
-
       }
     }
   },
@@ -349,26 +351,28 @@ Polymer({
   _setParsePathRegex: function(newValue) {
     if(newValue) {
       this.pathPrefix = newValue;
-    }
+    };
     // escape the pathPrefix before inserting it into the parsePathRegex
     var escapedPathPrefix = _.escapeRegExp(this.pathPrefix);
     // assign new value to parsePathRegex
-    this.parsePathRegex = new RegExp('/(?:https?:\/\/)?(?:www\.)?' +
-      '(?:[-a-zA-Z0-9@:%._\+~#=]{2,256})' +
-      '(?:\.[a-z]{2,6}\b)?(?:\:[0-9]{2,6})?\/' +
+    this.parsePathRegex = new RegExp('(?:https?:\/\/)?(?:www\.)?' +
+      '(?:[-a-zA-Z0-9@:%._\+~#=]{2,256})?(?:\.[a-z]{2,6}\b)?' +
+      '(?:\:[0-9]{2,6})?\/?'+
       escapedPathPrefix +
-      '([-a-zA-Z0-9@:%._\+~#=\/\d\w]*)/');
+      '\/([-a-zA-Z0-9@:%._\+~#=\/\d\w]*)');
   },
 
-  // send any path and get back a parsed path
-  // example: "http://localhost:3000/#!/path" => "/path"
+  // Returns path parsed
+  // example: "http://localhost:3000/#!/path?query=string" => "path"
+  // example: "http://localhost:3000/#!/path" => "path"
+  // example: "#!/path" => "path"
   _parsePath: function(path) {
     // return null if there is no path given
     if(path && this.parsePathRegex) {
       // the regex should extract characters past the path prefix as match[1]
       var match = this.parsePathRegex.exec(path);
       if(match) {
-        match[1];
+        return match[1];
       } else {
         return "/";
       }
@@ -388,7 +392,7 @@ Polymer({
   * item.href is computed as pathPrefix (such as "#!/") prepended to actual
   * path value (looked up by externally defined pathKey, default: 'path')
   */
-  _addHrefToItem(item) {
+  _addHrefToItem: function(item) {
     item.href = this.pathPrefix + '/' + item[this.pathKey];
     if (item.subitems) {
       item.subitems.forEach(this._addHrefToItem, item.subitems);
@@ -533,7 +537,7 @@ Polymer({
 
   _getTextEls: function() {
     // return all children <span> elements
-    return this._root.querySelectorAll("span");
+    return Polymer.dom(this.root).querySelectorAll("span");
   },
 
   _expandNav: function() {
