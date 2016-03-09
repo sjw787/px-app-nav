@@ -90,6 +90,8 @@ Polymer({
   */
   _navItems: [{}],
 
+  _root: Polymer.dom(this.root),
+
   /**
    * Internal representation of navigation items
   */
@@ -284,34 +286,50 @@ Polymer({
    * @param {String} path The selected path
    */
   _markSelected: function(path) {
-    var resolvedPath = this._parsePath(path);
-    var topLevelNavElems = Polymer.dom(this.root).querySelectorAll("#navitemlist>li");
-    if (this.navItems) {
-      for (var i = 0; i < this.navItems.length; i++) {
-        var item = this.navItems[i];
-        item.selected = item[this.pathKey] === resolvedPath;
-        item.subSelected = false;
+    if (this._navItems) {
+      // capture the correct path
+      var resolvedPath = this._parsePath(path);
+      // all top-level <li> elements
+      var lis = this._root.querySelectorAll("#navitemlist>li");
+      // loop over navItems and set selected
+      var i;
+      for (i = 0; i < this._navItems.length; i++) {
+        var item = this._navItems[i];
+        var itemLink = Polymer.dom(lis[i]).querySelector('a');
+        item.selected = (item[this.pathKey] === resolvedPath);
         item.class = item.selected ? "selected" : "";
-        if (item.subitems) {
-          item.subitems.forEach(function(subitem, idx) {
-            this._asdf(subitem, idx, resolvedPath, topLevelNavElems, item, i);
-          }, this);
+        if(item.selected && itemLink) {
+          itemLink.classList.add("selected");
+          itemLink.classList.remove("subselected");
+        } else if(itemLink) {
+          itemLink.classList.remove("selected");
+          itemLink.classList.remove("subselected");
         }
-        this.toggleClass("selected", item.selected, Polymer.dom(topLevelNavElems[i]).querySelector('a'));
-        this.toggleClass("subselected", item.subSelected, Polymer.dom(topLevelNavElems[i]).querySelector('a'));
-      }
-    }
-  },
+        item.subSelected = false;
+        if (item.subitems) {
+          var j;
+          var subitem;
+          var li;
+          for(j = 0; j < item.subitems.length; j++) {
+            subitem = item.subitems[j];
+            this._asdf(subitem, j, resolvedPath, lis, item, i);
+            subitem.selected = subitem[this.pathKey] === resolvedPath;
+            subitem.class = subitem.selected ? "selected" : "";
+            if(lis.length > 0) {
+              if(j < Polymer.dom(lis[i]).querySelectorAll('ul>li').length) {
+                li = Polymer.dom(lis[i]);
+                this.toggleClass(
+                  "selected",
+                  subitem.selected,
+                  li.querySelectorAll('ul>li')[j].querySelector('a'));
+              }
+            }
+            item.subSelected = subitem.selected ? true : item.subSelected;
+          };
+        }
 
-  _asdf: function(subitem, idx, resolvedPath, topLevelNavElems, item, i) {
-    subitem.selected = subitem[this.pathKey] === resolvedPath;
-    subitem.class = subitem.selected ? "selected" : "";
-    if(topLevelNavElems.length > 0){
-      if(idx < Polymer.dom(topLevelNavElems[i]).querySelectorAll('ul>li').length) {
-        this.toggleClass("selected", subitem.selected, Polymer.dom(topLevelNavElems[i]).querySelectorAll('ul>li')[idx].querySelector('a'));
       }
     }
-    item.subSelected = subitem.selected ? true : item.subSelected;
   },
 
   _setSubNavVisibility: function(){
@@ -515,7 +533,7 @@ Polymer({
 
   _getTextEls: function() {
     // return all children <span> elements
-    return Polymer.dom(this.root).querySelectorAll("span");
+    return this._root.querySelectorAll("span");
   },
 
   _expandNav: function() {
