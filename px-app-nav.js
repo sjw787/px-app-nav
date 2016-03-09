@@ -108,7 +108,11 @@ Polymer({
     this._navItems = this._reconcileNavItems(this.navItems);
     this._setSubNavVisibility();
     this._potentiallyAdjustAccordion();
-    this._markSelected(window.location.href);
+    // delay execution to ensure dom is available to be marked
+    var _this = this;
+    var timeout = window.setTimeout(function() {
+      _this._markSelected(window.location.href);
+    }, 10);
   },
 
   /**
@@ -285,6 +289,7 @@ Polymer({
     if (this._navItems) {
       // capture the correct path
       var resolvedPath = this._parsePath(path);
+      console.log(resolvedPath)
       // all top-level <li> elements
       var lis = Polymer.dom(this.root).querySelectorAll("#navitemlist>li");
       // loop over navItems and set selected
