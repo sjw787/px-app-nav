@@ -280,61 +280,52 @@ Polymer({
       }, 100);
    },
 
+   _isItemSelected: function(item, path) {
+     return (item[this.pathKey] === path);
+   },
+
+   _markItemSelected: function(item, path) {
+     item.selected = this._isItemSelected(item, path);
+     item.class = item.selected ? "selected" : "";
+   },
+
   /**
    * Marks the nav item with the given path as selected, and all others as unselected.
    *
    * @param {String} path The selected path
    */
   _markSelected: function(path) {
-    if (this._navItems) {
+    // all top-level <li> elements
+    var lis = Polymer.dom(this.root).querySelectorAll("#navitemlist>li");
+    if (this._navItems && lis.length > 0) {
       // capture the correct path
       var resolvedPath = this._parsePath(path);
-      console.log(resolvedPath)
-      // all top-level <li> elements
-      var lis = Polymer.dom(this.root).querySelectorAll("#navitemlist>li");
       // loop over navItems and set selected
       var i, len = this._navItems.length;
-      /*
       for (i=0; i<len; i++ ) {
+        var li = Polymer.dom(lis[i]);
         var item = this._navItems[i];
-        var itemLink = Polymer.dom(lis[i]).querySelector('a');
-        item.selected = (item[this.pathKey] === resolvedPath);
-      }
-      */
-
-      for (i = 0; i < this._navItems.length; i++) {
-        var item = this._navItems[i];
-        var itemLink = Polymer.dom(lis[i]).querySelector('a');
-        item.selected = (item[this.pathKey] === resolvedPath);
-        item.class = item.selected ? "selected" : "";
-        if(item.selected && itemLink) {
-          itemLink.classList.add("selected");
-          itemLink.classList.remove("subselected");
-        } else if(itemLink) {
-          itemLink.classList.remove("selected");
-          itemLink.classList.remove("subselected");
-        }
+        var itemLink = li.querySelector('a');
+        this._markItemSelected(item, resolvedPath);
+        // find out if sub is selected
         item.subSelected = false;
         if (item.subitems) {
-          var j;
-          var subitem;
-          var li;
-          for(j = 0; j < item.subitems.length; j++) {
+          var j,
+              subitem,
+              sublen = item.subitems.length;
+          for (j = 0; j < sublen; j++) {
             subitem = item.subitems[j];
-            subitem.selected = subitem[this.pathKey] === resolvedPath;
-            subitem.class = subitem.selected ? "selected" : "";
-            if(lis.length > 0) {
-              if(j < Polymer.dom(lis[i]).querySelectorAll('ul>li').length) {
-                li = Polymer.dom(lis[i]);
-                this.toggleClass(
-                  "selected",
-                  subitem.selected,
-                  li.querySelectorAll('ul>li')[j].querySelector('a'));
-              }
+            this._markItemSelected(subitem, resolvedPath);
+            if (j < li.querySelectorAll('ul>li').length) {
+              var subItemLi = li.querySelectorAll('ul>li')[j];
+              var subItemLink = subItemLi.querySelector('a');
+              this.toggleClass("selected", subitem.selected, subItemLink);
             }
             item.subSelected = subitem.selected ? true : item.subSelected;
           }
         }
+        this.toggleClass("selected", item.selected, itemLink);
+        this.toggleClass("subselected", item.subSelected, itemLink);
       }
     }
   },
@@ -356,7 +347,7 @@ Polymer({
   _setParsePathRegex: function(newValue) {
     if(newValue) {
       this.pathPrefix = newValue;
-    };
+    }
     // escape the pathPrefix before inserting it into the parsePathRegex
     var escapedPathPrefix = _.escapeRegExp(this.pathPrefix);
     // assign new value to parsePathRegex
