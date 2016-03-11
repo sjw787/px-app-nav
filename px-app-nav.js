@@ -308,7 +308,6 @@ Polymer({
   },
 
   _markItemsSelected: function(node, items, path) {
-    var isOneItemSelected = false; // flag for parent
     var i, item, li; // hoist variables
     var lis = this._getChildLis(node); // child <li> elements
     var len = items.length;
