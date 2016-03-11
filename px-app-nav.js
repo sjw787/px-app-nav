@@ -266,28 +266,63 @@ Polymer({
    * @param {Event} evt The click event.
    * @private
    */
-   subnavClickHandler: function(evt){
-     var el = evt.currentTarget;
-     if (el.getAttribute("event-name")) {
-       this.fire(el.getAttribute("event-name"));
-     }
-     var href = el.getAttribute("href");
-     this._markSelected(href);
-     var self = this;
-     // We need a short delay for Safari to fire navResized after nav resize.
-     setTimeout(function() {
-        self._navResized();
-      }, 100);
-   },
+  subnavClickHandler: function(evt){
+   var el = evt.currentTarget;
+   if (el.getAttribute("event-name")) {
+     this.fire(el.getAttribute("event-name"));
+   }
+   var href = el.getAttribute("href");
+   this._markSelected(href);
+   var self = this;
+   // We need a short delay for Safari to fire navResized after nav resize.
+   setTimeout(function() {
+      self._navResized();
+    }, 100);
+  },
 
-   _isItemSelected: function(item, path) {
-     return (item[this.pathKey] === path);
-   },
+  // pass in a node and return array of child li elements, avoing nested lis
+  _getChildLis: function(node) {
+    var domNode = Polymer.dom(node);
+    // all <li> elements
+    var rootLis = domNode.querySelectorAll("ul>li");
+    // nested <li> elements
+    var nestedLis = domNode.querySelectorAll("ul>li>ul>li");
+    // remove nested and return array
+    return _.pullAll(rootLis, nestedLis);
+  },
 
-   _markItemSelected: function(item, path) {
-     item.selected = this._isItemSelected(item, path);
-     item.class = item.selected ? "selected" : "";
-   },
+  _isItemSelected: function(item, path) {
+    return (item[this.pathKey] === path);
+  },
+
+  _markItemSelected: function(item, li, path) {
+    item.selected = this._isItemSelected(item, path);
+    item.class = item.selected ? "selected" : "";
+    this.toggleClass("selected", item.selected, li.querySelector('a'));
+  },
+
+  // is one selected?
+  _oneItemIsSelected: function(items) {
+    var selecteds = _.filter(items, function(item) { return item.selected; });
+    return selecteds.length > 0 ? true : false;
+  },
+
+  _markItemsSelected: function(node, items, path) {
+    var isOneItemSelected = false; // flag for parent
+    var i, item, li; // hoist variables
+    var lis = this._getChildLis(node); // child <li> elements
+    var len = items.length;
+    for (i=0; i<len; i++) {
+      item = items[i];
+      li = Polymer.dom(lis[i]);
+      this._markItemSelected(item, li, path);
+      if (item.subitems) {
+        this._markItemsSelected(li, item.subitems, path);
+        item.subSelected = this._oneItemIsSelected(item.subitems);
+        this.toggleClass("subselected", item.subSelected, li.querySelector('a'));
+      }
+    }
+  },
 
   /**
    * Marks the nav item with the given path as selected, and all others as unselected.
@@ -295,49 +330,18 @@ Polymer({
    * @param {String} path The selected path
    */
   _markSelected: function(path) {
-    // all top-level <li> elements
-    var lis = Polymer.dom(this.root).querySelectorAll("#navitemlist>li");
-    if (this._navItems && lis.length > 0) {
-      // capture the correct path
-      var resolvedPath = this._parsePath(path);
-      // loop over navItems and set selected
-      var i, len = this._navItems.length;
-      for (i=0; i<len; i++ ) {
-        var li = Polymer.dom(lis[i]);
-        var item = this._navItems[i];
-        var itemLink = li.querySelector('a');
-        this._markItemSelected(item, resolvedPath);
-        // find out if sub is selected
-        item.subSelected = false;
-        if (item.subitems) {
-          var j,
-              subitem,
-              sublen = item.subitems.length;
-          for (j = 0; j < sublen; j++) {
-            subitem = item.subitems[j];
-            this._markItemSelected(subitem, resolvedPath);
-            if (j < li.querySelectorAll('ul>li').length) {
-              var subItemLi = li.querySelectorAll('ul>li')[j];
-              var subItemLink = subItemLi.querySelector('a');
-              this.toggleClass("selected", subitem.selected, subItemLink);
-            }
-            item.subSelected = subitem.selected ? true : item.subSelected;
-          }
-        }
-        this.toggleClass("selected", item.selected, itemLink);
-        this.toggleClass("subselected", item.subSelected, itemLink);
-      }
-    }
+    // capture the correct path
+    var resolvedPath = this._parsePath(path);
+    this._markItemsSelected(this.root, this._navItems, resolvedPath);
   },
 
   _setSubNavVisibility: function(){
-    this.navItems.forEach( function(item){
+    this._navItems.forEach( function(item){
       if (item.subSelected){
         item.subitemlistclass = "list-bare";
         item.subitemclass = "";
         item.class = "subselected";
-      }
-      else{
+      } else {
         item.subitemlistclass = "visuallyhidden list-bare";
         item.subitemclass = "visuallyhidden";
       }
