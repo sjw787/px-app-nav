@@ -82,6 +82,7 @@ Polymer({
       type: Object,
       value:function(){ return {};}
     }
+
   },
 
   /**
@@ -318,7 +319,10 @@ Polymer({
       if (item.subitems) {
         this._markItemsSelected(li, item.subitems, path);
         item.subSelected = this._oneItemIsSelected(item.subitems);
-        this.toggleClass("subselected", item.subSelected, li.querySelector('a'));
+        this.toggleClass(
+          "subselected",
+          item.subSelected,
+          li.querySelector('a'));
       }
     }
   },
