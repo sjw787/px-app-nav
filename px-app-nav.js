@@ -163,7 +163,7 @@ Polymer({
     var _this = this;
     // add listener for history change event (back button)
     window.addEventListener('popstate', function(event) {
-      _this.markSelected(window.location.href);
+      _this._markSelected(window.location.href);
     });
   },
 
@@ -372,6 +372,8 @@ Polymer({
     }, this);
   },
 
+  // Pass in value of pathPrefix (for example: '#!'),
+  // then this will set this.parsePathRegex
   _setParsePathRegex: function(newValue) {
     if (newValue) {
       this.pathPrefix = newValue;
