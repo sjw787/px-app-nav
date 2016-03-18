@@ -28,7 +28,7 @@ Polymer({
      * @default ["#!"]
      */
     pathPrefix: {
-      value : '#!',
+      value: '#!',
       type: String,
       observer: '_setParsePathRegex'
     },
@@ -78,27 +78,30 @@ Polymer({
      * @default [function(){ return {};}]
      * @private
      */
-    ani:{
+    ani: {
       type: Object,
-      value:function(){ return {};}
+      value: function() {
+        return {};
+      }
     }
 
   },
 
   /**
    * Internal representation of navigation items
-  */
+   */
   _navItems: [{}],
 
   /**
    * Internal representation of navigation items
-  */
+   */
   parsePathRegex: null,
 
   // Set media query and if navItems are available, reset (init)
   ready: function() {
     this._setMediaQuery();
     this._setParsePathRegex(this.pathPrefix);
+    this._setPopstateListener();
     if (this.navItems && this.navItems.length > 0) {
       this._resetNav();
     }
@@ -119,7 +122,7 @@ Polymer({
   /**
    * Reconcile internal representation of navItems for use in the template
    * Parse navItemsStrings and navItemsPaths to create unified navItems
-  */
+   */
   _reconcileNavItems: function(items) {
     items.forEach(this._reconcileNavItem, this);
     return items;
@@ -147,8 +150,7 @@ Polymer({
         if (_this.navExpanded) {
           _this.toggleNav();
         }
-      }
-      else {
+      } else {
         // width is greater than 63.9rem
         if (!_this.navExpanded) {
           _this.toggleNav();
@@ -157,8 +159,16 @@ Polymer({
     });
   },
 
+  _setPopstateListener: function() {
+    var _this = this;
+    // add listener for history change event (back button)
+    window.addEventListener('popstate', function(event) {
+      _this.markSelected(window.location.href);
+    });
+  },
+
   _potentiallyAdjustAccordion: function() {
-    this.navItems.forEach(function(item){
+    this.navItems.forEach(function(item) {
       var navSubitems = item.subitems;
       if (navSubitems && navSubitems.length >= 1 && item.subSelected) {
         // if subselected && has subitems
@@ -168,11 +178,12 @@ Polymer({
         var listResizeAnimation = this._keyframeBuilder(parent, heightAfter);
         document.timeline.play(listResizeAnimation);
       }
-     }, this);
+    }, this);
   },
 
   _selectSubSelected: function() {
-    return Polymer.dom(this.$.navitemlist).querySelector('a.subselected');
+    return Polymer.dom(this.$.navitemlist)
+      .querySelector('a.subselected');
   },
 
   _calcHeightAfter: function(navSubitems, parentA) {
@@ -182,9 +193,14 @@ Polymer({
   _keyframeBuilder: function(parent, heightAfter) {
     return new SequenceEffect([
       new KeyframeEffect(
-        parent,
-        [ {height: parent.clientHeight}, {height: heightAfter}],
-        { duration: 200, fill: 'forwards' }
+        parent, [{
+          height: parent.clientHeight
+        }, {
+          height: heightAfter
+        }], {
+          duration: 200,
+          fill: 'forwards'
+        }
       )
     ]);
   },
@@ -216,38 +232,41 @@ Polymer({
     this.fire(el.getAttribute("event-name"));
   },
 
-  _animateMenuItem: function(subnavEle){
+  _animateMenuItem: function(subnavEle) {
     var hidden = subnavEle.classList.contains('visuallyhidden'),
-        allSubNavSpans = Polymer.dom(subnavEle).querySelectorAll("span"),
-        self = this,
-        navToHide,
-        navToHideSpans,
-        allSubNavs = Polymer.dom(this.$.navitemlist).querySelectorAll("ul"),
-        openAnimation;
+      allSubNavSpans = Polymer.dom(subnavEle)
+      .querySelectorAll("span"),
+      self = this,
+      navToHide,
+      navToHideSpans,
+      allSubNavs = Polymer.dom(this.$.navitemlist)
+      .querySelectorAll("ul"),
+      openAnimation;
 
-    for (var i=0; i<allSubNavs.length; i++) {
-      if (allSubNavs[i] === subnavEle && !allSubNavs[i].classList.contains('visuallyhidden')){
+    for (var i = 0; i < allSubNavs.length; i++) {
+      if (allSubNavs[i] === subnavEle && !allSubNavs[i].classList.contains('visuallyhidden')) {
         navToHide = allSubNavs[i];
-        navToHideSpans = Polymer.dom(navToHide).querySelectorAll("span");
+        navToHideSpans = Polymer.dom(navToHide)
+          .querySelectorAll("span");
       }
     }
-    if (navToHide){
+    if (navToHide) {
       openAnimation = new SequenceEffect([
-                            this._closeAccordionEffectAnimation(navToHide, navToHideSpans),
-                            this._openAccordionEffectAnimation(subnavEle, allSubNavSpans)
-                          ]);
-    } else if (!hidden){
+        this._closeAccordionEffectAnimation(navToHide, navToHideSpans),
+        this._openAccordionEffectAnimation(subnavEle, allSubNavSpans)
+      ]);
+    } else if (!hidden) {
       openAnimation = this._closeAccordionEffectAnimation(subnavEle, allSubNavSpans);
-    } else{
+    } else {
       openAnimation = this._openAccordionEffectAnimation(subnavEle, allSubNavSpans);
 
     }
 
     var accordionAnimationPlayer = document.timeline.play(openAnimation);
 
-    accordionAnimationPlayer.addEventListener('finish', function(){
+    accordionAnimationPlayer.addEventListener('finish', function() {
       self._navResized();
-      if(!self.navExpanded){
+      if (!self.navExpanded) {
         self.toggleNav();
       }
     });
@@ -267,16 +286,16 @@ Polymer({
    * @param {Event} evt The click event.
    * @private
    */
-  subnavClickHandler: function(evt){
-   var el = evt.currentTarget;
-   if (el.getAttribute("event-name")) {
-     this.fire(el.getAttribute("event-name"));
-   }
-   var href = el.getAttribute("href");
-   this._markSelected(href);
-   var self = this;
-   // We need a short delay for Safari to fire navResized after nav resize.
-   setTimeout(function() {
+  subnavClickHandler: function(evt) {
+    var el = evt.currentTarget;
+    if (el.getAttribute("event-name")) {
+      this.fire(el.getAttribute("event-name"));
+    }
+    var href = el.getAttribute("href");
+    this._markSelected(href);
+    var self = this;
+    // We need a short delay for Safari to fire navResized after nav resize.
+    setTimeout(function() {
       self._navResized();
     }, 100);
   },
@@ -304,7 +323,9 @@ Polymer({
 
   // is one selected?
   _oneItemIsSelected: function(items) {
-    var selecteds = _.filter(items, function(item) { return item.selected; });
+    var selecteds = _.filter(items, function(item) {
+      return item.selected;
+    });
     return selecteds.length > 0 ? true : false;
   },
 
@@ -312,7 +333,7 @@ Polymer({
     var i, item, li; // hoist variables
     var lis = this._getChildLis(node); // child <li> elements
     var len = items.length;
-    for (i=0; i<len; i++) {
+    for (i = 0; i < len; i++) {
       item = items[i];
       li = Polymer.dom(lis[i]);
       this._markItemSelected(item, li, path);
@@ -338,9 +359,9 @@ Polymer({
     this._markItemsSelected(this.root, this._navItems, resolvedPath);
   },
 
-  _setSubNavVisibility: function(){
-    this._navItems.forEach( function(item){
-      if (item.subSelected){
+  _setSubNavVisibility: function() {
+    this._navItems.forEach(function(item) {
+      if (item.subSelected) {
         item.subitemlistclass = "list-bare";
         item.subitemclass = "";
         item.class = "subselected";
@@ -352,7 +373,7 @@ Polymer({
   },
 
   _setParsePathRegex: function(newValue) {
-    if(newValue) {
+    if (newValue) {
       this.pathPrefix = newValue;
     }
     // escape the pathPrefix before inserting it into the parsePathRegex
@@ -360,7 +381,7 @@ Polymer({
     // assign new value to parsePathRegex
     this.parsePathRegex = new RegExp('(?:https?:\/\/)?(?:www\.)?' +
       '(?:[-a-zA-Z0-9@:%._\+~#=]{2,256})?(?:\.[a-z]{2,6}\b)?' +
-      '(?:\:[0-9]{2,6})?\/?'+
+      '(?:\:[0-9]{2,6})?\/?' +
       escapedPathPrefix +
       '\/([-a-zA-Z0-9@:%._\+~#=\/\d\w]*)');
   },
@@ -371,10 +392,10 @@ Polymer({
   // example: "#!/path" => "path"
   _parsePath: function(path) {
     // return null if there is no path given
-    if(path && this.parsePathRegex) {
+    if (path && this.parsePathRegex) {
       // the regex should extract characters past the path prefix as match[1]
       var match = this.parsePathRegex.exec(path);
-      if(match) {
+      if (match) {
         return match[1];
       } else {
         return "/";
@@ -385,16 +406,16 @@ Polymer({
   },
 
   _checkItemClass: function(item) {
-    if (!item.class){
+    if (!item.class) {
       item.subitemlistclass = item.subitemclass = item.class = "";
     }
     return item;
   },
 
   /*
-  * item.href is computed as pathPrefix (such as "#!/") prepended to actual
-  * path value (looked up by externally defined pathKey, default: 'path')
-  */
+   * item.href is computed as pathPrefix (such as "#!/") prepended to actual
+   * path value (looked up by externally defined pathKey, default: 'path')
+   */
   _addHrefToItem: function(item) {
     item.href = this.pathPrefix + '/' + item[this.pathKey];
     if (item.subitems) {
@@ -409,11 +430,19 @@ Polymer({
   },
 
   _keyframeFadeIn: function(el) {
-    return new KeyframeEffect(el, [ {opacity: 0}, {opacity: 1} ], 100);
+    return new KeyframeEffect(el, [{
+      opacity: 0
+    }, {
+      opacity: 1
+    }], 100);
   },
 
   _keyframeFadeOut: function(el) {
-    return new KeyframeEffect(el, [ {opacity: 1}, {opacity: 0} ], 100);
+    return new KeyframeEffect(el, [{
+      opacity: 1
+    }, {
+      opacity: 0
+    }], 100);
   },
 
   _keyframeFadeInAll: function(els) {
@@ -432,7 +461,11 @@ Polymer({
 
   _keyframeAnimateWidth: function(el, from, to) {
     // Return keyframe effect animating el width 'from' 'to', in 200ms
-    return new KeyframeEffect(el, [{ width: from}, { width: to}], 200);
+    return new KeyframeEffect(el, [{
+      width: from
+    }, {
+      width: to
+    }], 200);
   },
 
   _keyframeContractWidth: function(el) {
@@ -453,7 +486,10 @@ Polymer({
       } else {
         el.classList.toggle(className);
       }
-    }, { duration: 0, fill: 'forwards' });
+    }, {
+      duration: 0,
+      fill: 'forwards'
+    });
   },
 
   _keyframeToggleClassAll: function(els, className) {
@@ -467,17 +503,29 @@ Polymer({
   _keyframeContractAccordian: function(el) {
     // Contract the accordian from it's current height to 0px in 200ms
     var accordionHeight = el.clientHeight + 'px';
-    return new KeyframeEffect(el,
-      [{ height: accordionHeight }, { height: '0px' }],
-      { duration: 200, fill: 'forwards' });
+    return new KeyframeEffect(el, [{
+      height: accordionHeight
+    }, {
+      height: '0px'
+    }], {
+      duration: 200,
+      fill: 'forwards'
+    });
   },
 
   _keyframeExpandAccordian: function(el, textEls) {
     var accordionHeight = textEls.length * (el.parentElement.clientHeight * 0.6666) + 'px';
-    return new KeyframeEffect(el, [{ height: '0px' }, { height: accordionHeight }], { duration: 200, fill: 'forwards' });
+    return new KeyframeEffect(el, [{
+      height: '0px'
+    }, {
+      height: accordionHeight
+    }], {
+      duration: 200,
+      fill: 'forwards'
+    });
   },
 
-  _closeAccordionEffectAnimation: function(mainEl, textEls){
+  _closeAccordionEffectAnimation: function(mainEl, textEls) {
     var _this = this;
     // Animate the closing of the open accordion
     // Animation sequence:
@@ -493,7 +541,7 @@ Polymer({
     ]);
   },
 
-  _openAccordionEffectAnimation: function(mainEl, textEls){
+  _openAccordionEffectAnimation: function(mainEl, textEls) {
     // Animation sequence:
     // 1. Toggle class 'visuallyhidden'
     // 2. Expand the accordian element height
@@ -540,14 +588,15 @@ Polymer({
 
   _getTextEls: function() {
     // return all children <span> elements
-    return Polymer.dom(this.root).querySelectorAll("span");
+    return Polymer.dom(this.root)
+      .querySelectorAll("span");
   },
 
   _expandNav: function() {
     // Notify listeners that animation is in progress
     var navAnimation = this._expandNavAnimation(this, this._getTextEls());
     this.ani = document.timeline.play(navAnimation);
-    this.ani.addEventListener('finish', function(){
+    this.ani.addEventListener('finish', function() {
       // raise event once we've expanded;
       this.fire('nav-expanded');
       // ensure animation is complete then dispatch global scope-resize event
@@ -561,12 +610,12 @@ Polymer({
     this.navContracting = true;
     var navAnimation = this._contractNavAnimation(this, this._getTextEls());
     this.ani = document.timeline.play(navAnimation);
-    this.ani.addEventListener('finish', function(){
+    this.ani.addEventListener('finish', function() {
       this.navContracting = false;
       this.fire('nav-collapsed');
       // let the nav bar animation truly finish before broadcasting a window resize event
       // so other components can react after the animation
-      setTimeout(function(){
+      setTimeout(function() {
         window.dispatchEvent(new Event('resize'));
       }, 50);
     }.bind(this));
@@ -587,9 +636,9 @@ Polymer({
    *
    * @param {Boolean} newValue The new value of navExpanded.
    * @private
-  */
+   */
   _handleNavExpanded: function(newValue) {
-    if(!newValue) {
+    if (!newValue) {
       this.fire('nav-expanding');
       this._expandNav();
     } else {
@@ -599,7 +648,7 @@ Polymer({
   },
 
   _handleNavItems: function(newValue) {
-    if (!newValue){
+    if (!newValue) {
       this._navItems = [{}];
     } else {
       this._resetNav();
