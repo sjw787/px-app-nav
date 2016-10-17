@@ -24,9 +24,10 @@
     "label": "Sub Category 3"
   }]
 }, {
-  "path": "tab3",
+  "path": "https://github.com",
   "icon": "fa-bar-chart",
-  "label": "Analysis"
+  "label": "Analysis",
+  "externalLink" : true
 }, {
   "path": "tab4",
   "icon": "fa-dashboard",

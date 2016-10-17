@@ -157,6 +157,10 @@ Nav bar / drawer for applications
       ani:{
         type: Object,
         value:function(){ return {};}
+      },
+      externalLink: {
+        type: Boolean,
+        value: false
       }
     },
 
@@ -434,7 +438,12 @@ Nav bar / drawer for applications
     },
 
     _computeHref: function(item) {
-      item.href = item[this.pathKey] ? this.pathPrefix + item[this.pathKey] : null;
+      if (item.externalLink && item[this.pathKey]) {
+          item.href = item.pathKey;
+      } else {
+        item.href = item[this.pathKey] ? this.pathPrefix + item[this.pathKey] : null;
+      }
+
       if (!item.class){
         item.subitemlistclass = item.subitemclass = item.class = "";
 
